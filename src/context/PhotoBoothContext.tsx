@@ -67,33 +67,9 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (storedSessions) {
       setSessions(JSON.parse(storedSessions));
     } else {
-      // Initialize with some sample data if none exists
-      const sampleSessions: Session[] = [
-        {
-          id: 'session1',
-          name: 'John Smith',
-          location: 'Castle',
-          date: new Date().toISOString(),
-          status: 'Active',
-          photos: [],
-        },
-        {
-          id: 'session2',
-          name: 'Sarah Johnson',
-          location: 'Waterfall',
-          date: new Date().toISOString(),
-          status: 'Completed',
-          photos: [],
-          bundle: {
-            name: '5 Photos Bundle',
-            count: 5,
-            price: 250
-          }
-        }
-      ];
-      
-      setSessions(sampleSessions);
-      localStorage.setItem('photoBoothSessions', JSON.stringify(sampleSessions));
+      // Initialize with an empty array if none exists
+      setSessions([]);
+      localStorage.setItem('photoBoothSessions', JSON.stringify([]));
     }
   }, []);
 

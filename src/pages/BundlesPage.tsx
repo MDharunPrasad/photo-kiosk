@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
@@ -120,11 +119,6 @@ const BundlesPage = () => {
             <h1 className="text-3xl md:text-4xl font-bold text-photobooth-primary mb-4">
               Select Your Perfect Bundle
             </h1>
-            
-            <p className="text-gray-600 md:text-lg max-w-2xl mx-auto">
-              Choose a bundle that fits your needs. All packages include professional editing 
-              and high-quality prints delivered to you.
-            </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

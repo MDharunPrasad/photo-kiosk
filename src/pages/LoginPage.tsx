@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -68,7 +67,7 @@ const LoginPage: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Admin">Admin</SelectItem>
-                    <SelectItem value="Cameraman">Cameraman</SelectItem>
+                    <SelectItem value="Photographer">Photographer</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

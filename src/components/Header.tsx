@@ -22,7 +22,7 @@ const Header = () => {
   };
   
   return (
-    <header className="bg-gradient-to-r from-photobooth-primary to-photobooth-primary-dark text-white h-28 px-8 shadow-md flex items-center">
+    <header className="bg-gradient-to-r from-photobooth-primary to-photobooth-primary-dark text-white h-20 px-6 shadow-md flex items-center">
       <div className="flex w-full justify-between items-center">
         <div className="flex items-center">
           <Link to="/" className="text-2xl md:text-3xl font-bold text-white no-underline border-none outline-none bg-transparent shadow-none">
@@ -100,7 +100,7 @@ const Header = () => {
                 </Link>
                 <Button 
                   variant="outline" 
-                  className="text-white border-white hover:bg-white hover:text-photobooth-primary font-semibold"
+                  className="text-white border-white bg-transparent font-semibold"
                   onClick={handleLogout}
                 >
                   <LogOut className="h-4 w-4 mr-1" />
