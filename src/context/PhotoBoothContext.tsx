@@ -100,7 +100,15 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Save data to localStorage whenever it changes
   useEffect(() => {
     if (sessions.length > 0) {
-      localStorage.setItem('photoBoothSessions', JSON.stringify(sessions));
+      // Remove image data before saving to localStorage
+      const sessionsForStorage = sessions.map(session => ({
+        ...session,
+        photos: session.photos.map(photo => {
+          const { url, ...rest } = photo;
+          return rest;
+        })
+      }));
+      localStorage.setItem('photoBoothSessions', JSON.stringify(sessionsForStorage));
     }
   }, [sessions]);
 

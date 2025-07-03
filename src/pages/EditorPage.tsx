@@ -172,11 +172,15 @@ const EditorPage = () => {
       
       <main className="flex-1 container mx-auto px-4 py-6 md:py-8">
         {editingPhotoIndex !== null && uploadedPhotos[editingPhotoIndex] ? (
-          <PhotoEditor
-            imageUrl={uploadedPhotos[editingPhotoIndex]}
-            onSave={handleSaveEdit}
-            onCancel={handleCancelEdit}
-          />
+          uploadedPhotos[editingPhotoIndex] ? (
+            <PhotoEditor
+              imageUrl={uploadedPhotos[editingPhotoIndex]}
+              onSave={handleSaveEdit}
+              onCancel={handleCancelEdit}
+            />
+          ) : (
+            <div className="text-center text-red-500 font-semibold my-8">No image data available for editing.</div>
+          )
         ) : (
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row md:justify-between items-center mb-6 md:mb-8">
@@ -265,6 +269,7 @@ const EditorPage = () => {
                             type="file"
                             id={`photo-upload-${index}`}
                             accept="image/*"
+                            multiple
                             className="hidden"
                             onChange={(e) => handleFileUpload(e, index)}
                           />

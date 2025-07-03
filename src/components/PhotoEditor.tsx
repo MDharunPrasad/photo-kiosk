@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { fabric } from 'fabric';
 import { Button } from "@/components/ui/button";
@@ -118,13 +117,14 @@ const PhotoEditor: React.FC<PhotoEditorProps> = ({ imageUrl, onSave, onCancel })
   
   // Load the image into the canvas
   useEffect(() => {
-    if (!canvas || !imageUrl) return;
-    
+    if (!canvas) return;
+    if (!imageUrl) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
-    
     // Clear any existing objects before loading a new image
     canvas.clear();
-    
     // Load the image and add it to canvas
     fabric.Image.fromURL(imageUrl, (fabricImg) => {
       // Calculate aspect ratio to fit within canvas
