@@ -385,12 +385,11 @@ const PhotoEditor: React.FC<PhotoEditorProps> = ({ imageUrl, onSave, onCancel })
     if (!canvas) return;
     
     try {
-      // Convert canvas to image URL
+      // Convert canvas to image URL as PNG (supports transparency)
       const dataURL = canvas.toDataURL({
-        format: 'jpeg',
-        quality: 0.8,
+        format: 'png',
+        quality: 1.0,
       });
-      
       onSave(dataURL);
     } catch (error) {
       console.error("Error saving image: ", error);

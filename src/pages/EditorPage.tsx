@@ -60,13 +60,24 @@ const EditorPage = () => {
           newPhotos[index] = event.target.result;
           setUploadedPhotos(newPhotos);
           
-          // Add to current session
+          // Add or update photo in current session
           if (currentSession) {
-            addPhoto(currentSession.id, {
-              url: event.target.result,
-              edited: false,
-              timestamp: new Date().toISOString()
-            });
+            const photoId = currentSession.photos && currentSession.photos[index]?.id;
+            if (photoId) {
+              // Update existing photo
+              updatePhoto(currentSession.id, photoId, {
+                url: event.target.result,
+                edited: false,
+                lastEdited: new Date().toISOString()
+              });
+            } else {
+              // Add new photo
+              addPhoto(currentSession.id, {
+                url: event.target.result,
+                edited: false,
+                timestamp: new Date().toISOString()
+              });
+            }
           }
         }
       };
