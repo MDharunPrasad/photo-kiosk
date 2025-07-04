@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { usePhotoBoothContext } from '@/context/PhotoBoothContext';
 import Header from '@/components/Header';
 import PhotoEditor from '@/components/PhotoEditor';
-import { Plus, Edit, ArrowLeft, ArrowRight, Image, Clock, Trash2 } from 'lucide-react';
+import { Plus, Edit, ArrowLeft, ArrowRight, Image, Clock, Trash2, User, MapPin, Images } from 'lucide-react';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Photo } from '@/models/PhotoTypes';
@@ -199,16 +199,19 @@ const EditorPage = () => {
                 {currentSession.bundle.name}
               </h1>
               
-              <div className="flex items-center gap-2 flex-wrap justify-center">
-                <Badge variant="outline" className="bg-blue-100 text-photobooth-primary border-none px-3 py-1">
+              <div className="flex items-center gap-3 flex-wrap justify-center">
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 font-medium shadow-sm">
+                  <User className="w-4 h-4" />
                   {currentSession.name}
-                </Badge>
-                <Badge variant="outline" className="bg-purple-100 text-purple-700 border-none px-3 py-1">
+                </span>
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-purple-50 border border-purple-200 text-purple-700 font-medium shadow-sm">
+                  <MapPin className="w-4 h-4" />
                   {currentSession.location}
-                </Badge>
-                <Badge variant="outline" className="bg-green-100 text-green-700 border-none px-3 py-1">
+                </span>
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-50 border border-green-200 text-green-700 font-medium shadow-sm">
+                  <Images className="w-4 h-4" />
                   {uploadedPhotos.length} / {bundleCount === "unlimited" ? "∞" : bundleCount} Photos
-                </Badge>
+                </span>
               </div>
             </div>
             
