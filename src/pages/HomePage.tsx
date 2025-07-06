@@ -14,7 +14,7 @@ const HomePage: React.FC = () => {
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const { createSession, sessions, deleteSession, setCurrentSession } = usePhotoBoothContext();
+  const { createSession, sessions, deleteSession, recoverSession, setCurrentSession, locations } = usePhotoBoothContext();
   const navigate = useNavigate();
 
   const handleStartSession = (e: React.FormEvent) => {
@@ -77,7 +77,7 @@ const HomePage: React.FC = () => {
         s.location.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : sessions
-  ).filter(s => s.status === 'Completed');
+  ).filter(s => !s.deleted);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white flex flex-col">
@@ -113,10 +113,9 @@ const HomePage: React.FC = () => {
                       <SelectValue placeholder="Select location" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="entrance">Entrance</SelectItem>
-                      <SelectItem value="castle">Castle</SelectItem>
-                      <SelectItem value="waterfall">Waterfall</SelectItem>
-                      <SelectItem value="themeRide">Theme Ride</SelectItem>
+                      {locations.filter(loc => loc.isActive).map(loc => (
+                        <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -171,7 +170,6 @@ const HomePage: React.FC = () => {
                             <span className="capitalize">{session.location}</span>
                           </div>
                         </div>
-                        
                         <div className="flex items-center gap-3">
                           <div>{getStatusBadge(session.status)}</div>
                           <button

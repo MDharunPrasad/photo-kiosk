@@ -21,23 +21,39 @@ interface Session {
     count: number | string;
     price: number;
   };
+  deleted?: boolean;
+}
+
+interface Location {
+  id: string;
+  name: string;
+  isActive: boolean;
 }
 
 interface PhotoBoothContextType {
   currentUser: User | null;
   sessions: Session[];
   currentSession: Session | null;
-  login: (email: string, password: string, role: string) => boolean;
+  locations: Location[];
+  login: (email: string, password: string, role: string, forceLogin?: boolean) => boolean;
   logout: () => void;
   register: (name: string, email: string, password: string, role: string) => boolean;
   createSession: (name: string, location: string) => Session;
   deleteSession: (id: string) => void;
+  recoverSession: (id: string) => void;
   setCurrentSession: (session: Session | null) => void;
   selectBundle: (bundle: { name: string; count: number | string; price: number }) => void;
   addPhoto: (sessionId: string, photo: Omit<Photo, 'id'>) => void;
   updatePhoto: (sessionId: string, photoId: string, updates: Partial<Photo>) => void;
   deletePhoto: (sessionId: string, photoId: string) => void;
   completeSession: (sessionId: string) => void;
+  deleteAllSessions: () => void;
+  deleteSessionsByDateRange: (start: Date, end: Date) => void;
+  deleteSessionsByMonth: (month: number, year: number) => void;
+  autoDeleteOldSessions: () => void;
+  clearDeletedSessions: () => void;
+  addLocation: (name: string) => void;
+  toggleLocation: (id: string) => void;
 }
 
 const PhotoBoothContext = createContext<PhotoBoothContextType | undefined>(undefined);
@@ -54,39 +70,52 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [currentSession, setCurrentSession] = useState<Session | null>(null);
+  const [storageFull, setStorageFull] = useState(false);
+  const [locations, setLocations] = useState<Location[]>([]);
 
   // Load data from localStorage on mount
   useEffect(() => {
     const storedUser = localStorage.getItem('photoBoothUser');
     const storedSessions = localStorage.getItem('photoBoothSessions');
-    
+    const storedLocations = localStorage.getItem('photoBoothLocations');
     if (storedUser) {
       setCurrentUser(JSON.parse(storedUser));
     }
-    
     if (storedSessions) {
       setSessions(JSON.parse(storedSessions));
     } else {
-      // Initialize with an empty array if none exists
       setSessions([]);
       localStorage.setItem('photoBoothSessions', JSON.stringify([]));
+    }
+    if (storedLocations) {
+      setLocations(JSON.parse(storedLocations));
+    } else {
+      const defaultLocations = [
+        { id: 'entrance', name: 'Entrance', isActive: true },
+        { id: 'castle', name: 'Castle', isActive: true },
+        { id: 'waterfall', name: 'Waterfall', isActive: true },
+        { id: 'themeRide', name: 'Theme Ride', isActive: true },
+      ];
+      setLocations(defaultLocations);
+      localStorage.setItem('photoBoothLocations', JSON.stringify(defaultLocations));
     }
   }, []);
 
   // Save data to localStorage whenever it changes
   useEffect(() => {
-    if (sessions.length > 0) {
-      // Remove image data before saving to localStorage
-      const sessionsForStorage = sessions.map(session => ({
-        ...session,
-        photos: session.photos.map(photo => {
-          const { url, ...rest } = photo;
-          return rest;
-        })
-      }));
-      localStorage.setItem('photoBoothSessions', JSON.stringify(sessionsForStorage));
+    if (storageFull) return;
+    try {
+      localStorage.setItem('photoBoothSessions', JSON.stringify(sessions));
+    } catch (e) {
+      if (e && typeof e === 'object' && 'name' in e && e.name === 'QuotaExceededError') {
+        if (!storageFull) {
+          setStorageFull(true);
+          alert('Storage is full! Please delete some sessions to continue using the app.');
+        }
+      }
+      // Do NOT throw the error, just skip saving
     }
-  }, [sessions]);
+  }, [sessions, storageFull]);
 
   useEffect(() => {
     if (currentUser) {
@@ -96,23 +125,35 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [currentUser]);
 
+  // Save locations to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('photoBoothLocations', JSON.stringify(locations));
+  }, [locations]);
+
   // User authentication functions
-  const login = (email: string, password: string, role: string): boolean => {
+  const login = (email: string, password: string, role: string, forceLogin?: boolean): boolean => {
+    if (forceLogin) {
+      setCurrentUser({
+        id: `user_${Date.now()}`,
+        name: email.split('@')[0] || 'User',
+        email,
+        role: role as 'Admin' | 'Cameraman',
+      });
+      return true;
+    }
     // In a real app, this would validate against server data
     // For this demo, we'll use localStorage
     const users = JSON.parse(localStorage.getItem('photoBoothUsers') || '[]');
     const user = users.find((u: any) => u.email === email && u.role === role);
-
     if (user && user.password === password) {
       setCurrentUser({
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role as 'Admin' | 'Cameraman'
+        role: user.role as 'Admin' | 'Cameraman',
       });
       return true;
     }
-
     return false;
   };
 
@@ -169,11 +210,18 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const deleteSession = (id: string) => {
-    setSessions(prevSessions => prevSessions.filter(session => session.id !== id));
-    
+    setSessions(prevSessions => prevSessions.map(session =>
+      session.id === id ? { ...session, deleted: true } : session
+    ));
     if (currentSession?.id === id) {
       setCurrentSession(null);
     }
+  };
+
+  const recoverSession = (id: string) => {
+    setSessions(prevSessions => prevSessions.map(session =>
+      session.id === id ? { ...session, deleted: false } : session
+    ));
   };
 
   const selectBundle = (bundle: { name: string; count: number | string; price: number }) => {
@@ -282,21 +330,76 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
+  const deleteAllSessions = () => {
+    setSessions([]);
+    setCurrentSession(null);
+  };
+
+  const deleteSessionsByDateRange = (start: Date, end: Date) => {
+    setSessions(prevSessions => prevSessions.filter(session => {
+      const sessionDate = new Date(session.date);
+      return sessionDate < start || sessionDate > end;
+    }));
+  };
+
+  const deleteSessionsByMonth = (month: number, year: number) => {
+    setSessions(prevSessions => prevSessions.filter(session => {
+      const sessionDate = new Date(session.date);
+      return sessionDate.getMonth() !== month || sessionDate.getFullYear() !== year;
+    }));
+  };
+
+  const autoDeleteOldSessions = () => {
+    const now = new Date();
+    setSessions(prevSessions => prevSessions.filter(session => {
+      const sessionDate = new Date(session.date);
+      // Keep sessions from the last 31 days
+      return (now.getTime() - sessionDate.getTime()) < 31 * 24 * 60 * 60 * 1000;
+    }));
+  };
+
+  const clearDeletedSessions = () => {
+    setSessions(prevSessions => prevSessions.filter(session => !session.deleted));
+  };
+
+  // Location management functions
+  const addLocation = (name: string) => {
+    setLocations(prev => [
+      ...prev,
+      { id: `loc_${Date.now()}`, name, isActive: true }
+    ]);
+  };
+
+  const toggleLocation = (id: string) => {
+    setLocations(prev => prev.map(loc =>
+      loc.id === id ? { ...loc, isActive: !loc.isActive } : loc
+    ));
+  };
+
   const value = {
     currentUser,
     sessions,
     currentSession,
+    locations,
     login,
     logout,
     register,
     createSession,
     deleteSession,
+    recoverSession,
     setCurrentSession,
     selectBundle,
     addPhoto,
     updatePhoto,
     deletePhoto,
-    completeSession
+    completeSession,
+    deleteAllSessions,
+    deleteSessionsByDateRange,
+    deleteSessionsByMonth,
+    autoDeleteOldSessions,
+    clearDeletedSessions,
+    addLocation,
+    toggleLocation
   };
 
   return <PhotoBoothContext.Provider value={value}>{children}</PhotoBoothContext.Provider>;

@@ -19,7 +19,6 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!email || !password || !role) {
       toast({
         title: "Missing Information",
@@ -28,22 +27,13 @@ const LoginPage: React.FC = () => {
       });
       return;
     }
-    
-    const success = login(email, password, role);
-    
-    if (success) {
-      toast({
-        title: "Login Successful",
-        description: "Welcome back to PhotoBooth Software."
-      });
-      navigate('/');
-    } else {
-      toast({
-        title: "Login Failed",
-        description: "Invalid email, password, or role. Please try again.",
-        variant: "destructive"
-      });
-    }
+    // Accept any credentials for now
+    login(email, password, role, true); // pass a flag to force login
+    toast({
+      title: "Login Successful",
+      description: "Welcome back to PhotoBooth Software."
+    });
+    navigate('/');
   };
 
   return (
@@ -59,19 +49,6 @@ const LoginPage: React.FC = () => {
           
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select onValueChange={setRole}>
-                  <SelectTrigger id="role">
-                    <SelectValue placeholder="Select your role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Admin">Admin</SelectItem>
-                    <SelectItem value="Photographer">Photographer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input 
@@ -92,6 +69,19 @@ const LoginPage: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="role">Role</Label>
+                <Select onValueChange={setRole}>
+                  <SelectTrigger id="role">
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Admin">Admin</SelectItem>
+                    <SelectItem value="Photographer">Photographer</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
               <Button 
