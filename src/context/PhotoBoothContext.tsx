@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Photo } from '@/models/PhotoTypes';
+import { checkStorageQuota } from '../utils/imageUtils';
 
 // Types
 interface User {
@@ -78,24 +79,49 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const storedUser = localStorage.getItem('photoBoothUser');
     const storedSessions = localStorage.getItem('photoBoothSessions');
     const storedLocations = localStorage.getItem('photoBoothLocations');
+    
+    console.log('Context - Loading locations from localStorage:', storedLocations);
+    
     if (storedUser) {
       setCurrentUser(JSON.parse(storedUser));
     }
+    
     if (storedSessions) {
       setSessions(JSON.parse(storedSessions));
     } else {
       setSessions([]);
       localStorage.setItem('photoBoothSessions', JSON.stringify([]));
     }
+    
+    // Initialize locations properly
     if (storedLocations) {
-      setLocations(JSON.parse(storedLocations));
+      const parsedLocations = JSON.parse(storedLocations);
+      console.log('Context - Parsed locations:', parsedLocations);
+      // Ensure we have at least the default locations
+      if (parsedLocations.length === 0) {
+        const defaultLocations = [
+          { id: 'loc_1', name: 'Main Entrance', isActive: true },
+          { id: 'loc_2', name: 'Children\'s Play Area', isActive: true },
+          { id: 'loc_3', name: 'Garden Area', isActive: true },
+          { id: 'loc_4', name: 'Food Court', isActive: true },
+          { id: 'loc_5', name: 'Lake View', isActive: true }
+        ];
+        console.log('Context - Setting default locations:', defaultLocations);
+        setLocations(defaultLocations);
+        localStorage.setItem('photoBoothLocations', JSON.stringify(defaultLocations));
+      } else {
+        setLocations(parsedLocations);
+      }
     } else {
+      // Set default locations if none exist
       const defaultLocations = [
-        { id: 'entrance', name: 'Entrance', isActive: true },
-        { id: 'castle', name: 'Castle', isActive: true },
-        { id: 'waterfall', name: 'Waterfall', isActive: true },
-        { id: 'themeRide', name: 'Theme Ride', isActive: true },
+        { id: 'loc_1', name: 'Main Entrance', isActive: true },
+        { id: 'loc_2', name: 'Children\'s Play Area', isActive: true },
+        { id: 'loc_3', name: 'Garden Area', isActive: true },
+        { id: 'loc_4', name: 'Food Court', isActive: true },
+        { id: 'loc_5', name: 'Lake View', isActive: true }
       ];
+      console.log('Context - Setting initial default locations:', defaultLocations);
       setLocations(defaultLocations);
       localStorage.setItem('photoBoothLocations', JSON.stringify(defaultLocations));
     }
@@ -120,14 +146,15 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem('photoBoothUser', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('photoBoothUser');
     }
   }, [currentUser]);
 
-  // Save locations to localStorage whenever they change
+  // Add this new useEffect to save locations
   useEffect(() => {
-    localStorage.setItem('photoBoothLocations', JSON.stringify(locations));
+    if (locations.length > 0) {
+      localStorage.setItem('photoBoothLocations', JSON.stringify(locations));
+      console.log('Context - Saved locations to localStorage:', locations);
+    }
   }, [locations]);
 
   // User authentication functions
@@ -237,30 +264,64 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
-  const addPhoto = (sessionId: string, photo: Omit<Photo, 'id'>) => {
-    const newPhoto: Photo = {
-      ...photo,
-      id: `photo_${Date.now()}`
-    };
-    
-    setSessions(prevSessions => 
-      prevSessions.map(session => {
+  const addPhoto = (sessionId: string, photo: PhotoData) => {
+    setSessions(prevSessions => {
+      const updatedSessions = prevSessions.map(session => {
         if (session.id === sessionId) {
-          return {
-            ...session,
-            photos: [...session.photos, newPhoto]
-          };
+          const updatedPhotos = [...session.photos, photo];
+          return { ...session, photos: updatedPhotos };
         }
         return session;
-      })
-    );
-    
-    if (currentSession?.id === sessionId) {
-      setCurrentSession({
-        ...currentSession,
-        photos: [...currentSession.photos, newPhoto]
       });
-    }
+      
+      // Check storage quota before saving
+      const quota = checkStorageQuota();
+      console.log('Storage quota:', quota);
+      
+      if (quota.percentage > 80) {
+        console.warn('Storage quota nearly exceeded, cleaning up old sessions');
+        // Clean up old completed sessions
+        const cleanedSessions = updatedSessions.filter(session => 
+          session.status === 'Active' || 
+          (session.status === 'Completed' && 
+           new Date().getTime() - new Date(session.date).getTime() < 24 * 60 * 60 * 1000) // Keep only last 24 hours
+        );
+        
+        try {
+          localStorage.setItem('photoBoothSessions', JSON.stringify(cleanedSessions));
+          return cleanedSessions;
+        } catch (error) {
+          console.error('Failed to save to localStorage after cleanup:', error);
+          // If still failing, keep only active sessions
+          const activeSessions = updatedSessions.filter(session => session.status === 'Active');
+          localStorage.setItem('photoBoothSessions', JSON.stringify(activeSessions));
+          return activeSessions;
+        }
+      } else {
+        try {
+          localStorage.setItem('photoBoothSessions', JSON.stringify(updatedSessions));
+          return updatedSessions;
+        } catch (error) {
+          console.error('Failed to save to localStorage:', error);
+          
+          // Try to clean up and save again
+          const cleanedSessions = updatedSessions.filter(session => 
+            session.status === 'Active' || 
+            (session.status === 'Completed' && 
+             new Date().getTime() - new Date(session.date).getTime() < 60 * 60 * 1000) // Keep only last hour
+          );
+          
+          try {
+            localStorage.setItem('photoBoothSessions', JSON.stringify(cleanedSessions));
+            return cleanedSessions;
+          } catch (secondError) {
+            console.error('Failed to save even after cleanup:', secondError);
+            // Return updated sessions but don't save to localStorage
+            return updatedSessions;
+          }
+        }
+      }
+    });
   };
 
   const updatePhoto = (sessionId: string, photoId: string, updates: Partial<Photo>) => {

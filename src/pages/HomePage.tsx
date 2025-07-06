@@ -11,10 +11,16 @@ import { ArrowRight, Trash, Search, Camera, MapPin } from 'lucide-react';
 import Header from '@/components/Header';
 
 const HomePage: React.FC = () => {
+  const { sessions, locations, createSession, deleteSession, setCurrentSession } = usePhotoBoothContext();
+  
+  // Add debug logging
+  console.log('HomePage - Locations:', locations);
+  console.log('HomePage - Locations length:', locations.length);
+  console.log('HomePage - Active locations:', locations.filter(loc => loc.isActive));
+
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const { createSession, sessions, deleteSession, recoverSession, setCurrentSession, locations } = usePhotoBoothContext();
   const navigate = useNavigate();
 
   const handleStartSession = (e: React.FormEvent) => {
@@ -108,16 +114,39 @@ const HomePage: React.FC = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="location" className="text-gray-700 font-medium">Location in Park</Label>
-                  <Select onValueChange={setLocation}>
+                  <Select onValueChange={setLocation} value={location}>
                     <SelectTrigger id="location" className="border-gray-300">
                       <SelectValue placeholder="Select location" />
                     </SelectTrigger>
                     <SelectContent>
-                      {locations.filter(loc => loc.isActive).map(loc => (
-                        <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
-                      ))}
+                      {locations.length === 0 ? (
+                        <SelectItem value="no-locations" disabled>Loading locations...</SelectItem>
+                      ) : locations.filter(loc => loc.isActive).length === 0 ? (
+                        <SelectItem value="no-active-locations" disabled>No active locations available</SelectItem>
+                      ) : (
+                        locations.filter(loc => loc.isActive).map(loc => (
+                          <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
+                  
+                  {/* Temporary debug info and reset button */}
+                  <div className="text-xs text-gray-500 mt-1 p-2 bg-gray-50 rounded">
+                    Debug: {locations.length} total locations, {locations.filter(loc => loc.isActive).length} active
+                    {locations.length === 0 && (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          localStorage.removeItem('photoBoothLocations');
+                          window.location.reload();
+                        }}
+                        className="ml-2 text-blue-600 underline"
+                      >
+                        Reset Locations
+                      </button>
+                    )}
+                  </div>
                 </div>
                 
                 <Button 

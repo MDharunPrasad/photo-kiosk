@@ -7,10 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { usePhotoBoothContext } from '@/context/PhotoBoothContext';
 import Header from '@/components/Header';
 import PhotoEditor from '@/components/PhotoEditor';
-import { Plus, Edit, ArrowLeft, ArrowRight, Image, Clock, Trash2, User, MapPin, Images } from 'lucide-react';
+import { Camera, Plus, Edit, Trash2, ArrowRight, ArrowLeft, User, MapPin, Images, Clock, Image, Upload, X } from 'lucide-react';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Photo } from '@/models/PhotoTypes';
+import { compressImage, checkStorageQuota } from '../utils/imageUtils';
 
 const EditorPage = () => {
   const { currentSession, addPhoto, updatePhoto, deletePhoto } = usePhotoBoothContext();
@@ -37,52 +38,127 @@ const EditorPage = () => {
     }
   }, [currentSession, navigate, toast]);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, startIndex: number) => {
     const files = e.target.files;
     
     if (files && files.length > 0) {
-      const file = files[0];
+      // Check storage quota first
+      const quota = checkStorageQuota();
+      console.log('Storage quota before upload:', quota);
       
-      if (!file.type.startsWith('image/')) {
+      if (quota.percentage > 90) {
         toast({
-          title: "Invalid File Type",
-          description: "Please upload an image file.",
+          title: "Storage Full",
+          description: "Storage is nearly full. Please clear some sessions or reduce image quality.",
           variant: "destructive"
         });
         return;
       }
       
-      const reader = new FileReader();
+      // Calculate how many photos we can still upload
+      const bundleCount = currentSession.bundle.count;
+      const maxPhotos = typeof bundleCount === 'string' && bundleCount === "unlimited" ? 999 : Number(bundleCount);
+      const currentPhotoCount = uploadedPhotos.length;
+      const availableSlots = maxPhotos - currentPhotoCount;
       
-      reader.onload = (event) => {
-        if (event.target && typeof event.target.result === 'string') {
-          const newPhotos = [...uploadedPhotos];
-          newPhotos[index] = event.target.result;
-          setUploadedPhotos(newPhotos);
-          
-          // Add or update photo in current session
-          if (currentSession) {
-            const photoId = currentSession.photos && currentSession.photos[index]?.id;
-            if (photoId) {
-              // Update existing photo
-              updatePhoto(currentSession.id, photoId, {
-                url: event.target.result,
-                edited: false,
-                lastEdited: new Date().toISOString()
-              });
-            } else {
-              // Add new photo
-              addPhoto(currentSession.id, {
-                url: event.target.result,
-                edited: false,
-                timestamp: new Date().toISOString()
-              });
+      if (availableSlots <= 0) {
+        toast({
+          title: "Bundle Limit Reached",
+          description: `You have reached the maximum number of photos (${maxPhotos}) for your selected bundle.`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Limit the number of files to available slots
+      const filesToProcess = Math.min(files.length, availableSlots);
+      
+      if (files.length > availableSlots) {
+        toast({
+          title: "Some Files Skipped",
+          description: `Only ${filesToProcess} photos were uploaded to stay within your bundle limit of ${maxPhotos}.`,
+          variant: "default"
+        });
+      }
+      
+      // Convert FileList to Array for easier processing
+      const fileArray = Array.from(files).slice(0, filesToProcess);
+      
+      // Filter out non-image files
+      const validFiles = fileArray.filter(file => {
+        if (!file.type.startsWith('image/')) {
+          toast({
+            title: "Invalid File Type",
+            description: `File "${file.name}" is not an image and was skipped.`,
+            variant: "destructive"
+          });
+          return false;
+        }
+        return true;
+      });
+      
+      if (validFiles.length === 0) {
+        return;
+      }
+      
+      // Show loading toast
+      toast({
+        title: "Processing Images",
+        description: `Compressing and uploading ${validFiles.length} photo${validFiles.length > 1 ? 's' : ''}...`,
+      });
+      
+      try {
+        // Compress all files
+        const compressedImages = await Promise.all(
+          validFiles.map(file => compressImage(file, 0.8, 1920))
+        );
+        
+        // Create new photos array with all uploaded photos
+        const newUploadedPhotos = [...uploadedPhotos];
+        
+        compressedImages.forEach((dataUrl, index) => {
+          const targetIndex = currentPhotoCount + index;
+          newUploadedPhotos[targetIndex] = dataUrl;
+        });
+        
+        // Update local state first
+        setUploadedPhotos(newUploadedPhotos);
+        
+        // Add all photos to session one by one with delay to avoid overwhelming localStorage
+        if (currentSession) {
+          for (let i = 0; i < compressedImages.length; i++) {
+            const photo = {
+              url: compressedImages[i],
+              edited: false,
+              timestamp: new Date().toISOString()
+            };
+            
+            addPhoto(currentSession.id, photo);
+            
+            // Small delay between adds to prevent overwhelming the system
+            if (i < compressedImages.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 100));
             }
           }
         }
-      };
-      
-      reader.readAsDataURL(file);
+        
+        // Show success message
+        toast({
+          title: "Photos Uploaded",
+          description: `Successfully uploaded ${compressedImages.length} photo${compressedImages.length > 1 ? 's' : ''}.`,
+        });
+        
+        // Clear the file input
+        e.target.value = '';
+        
+      } catch (error) {
+        console.error('Error processing files:', error);
+        toast({
+          title: "Upload Error",
+          description: "Some photos failed to upload. Please try again with smaller images.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -183,15 +259,13 @@ const EditorPage = () => {
       
       <main className="flex-1 container mx-auto px-4 py-6 md:py-8">
         {editingPhotoIndex !== null && uploadedPhotos[editingPhotoIndex] ? (
-          uploadedPhotos[editingPhotoIndex] ? (
+          <div className="fixed inset-0 z-50 bg-white">
             <PhotoEditor
               imageUrl={uploadedPhotos[editingPhotoIndex]}
               onSave={handleSaveEdit}
               onCancel={handleCancelEdit}
             />
-          ) : (
-            <div className="text-center text-red-500 font-semibold my-8">No image data available for editing.</div>
-          )
+          </div>
         ) : (
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row md:justify-between items-center mb-6 md:mb-8">
@@ -208,7 +282,11 @@ const EditorPage = () => {
                   <MapPin className="w-4 h-4" />
                   {currentSession.location}
                 </span>
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-50 border border-green-200 text-green-700 font-medium shadow-sm">
+                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border font-medium shadow-sm ${
+                    uploadedPhotos.length >= (bundleCount === "unlimited" ? 999 : bundleCount)
+                      ? 'bg-red-50 border-red-200 text-red-700'
+                      : 'bg-green-50 border-green-200 text-green-700'
+                  }`}>
                   <Images className="w-4 h-4" />
                   {uploadedPhotos.length} / {bundleCount === "unlimited" ? "∞" : bundleCount} Photos
                 </span>
@@ -228,8 +306,43 @@ const EditorPage = () => {
               </TabsList>
               
               <TabsContent value="photos">
+                {/* Bulk Upload Section */}
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-blue-900">Quick Upload</h3>
+                    <span className="text-sm text-blue-600">
+                      {uploadedPhotos.length} / {bundleCount === "unlimited" ? "∞" : bundleCount} photos
+                    </span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <label className="flex-1 cursor-pointer">
+                      <div className="flex items-center justify-center px-4 py-3 border-2 border-dashed border-blue-300 rounded-lg hover:border-blue-400 hover:bg-blue-100 transition-colors">
+                        <div className="text-center">
+                          <Upload className="h-6 w-6 text-blue-600 mx-auto mb-2" />
+                          <span className="text-sm font-medium text-blue-900">
+                            Choose Multiple Photos
+                          </span>
+                          <p className="text-xs text-blue-600 mt-1">
+                            Select up to {bundleCount === "unlimited" ? "unlimited" : (Number(bundleCount) - uploadedPhotos.length)} photos
+                          </p>
+                        </div>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => handleFileUpload(e, uploadedPhotos.length)}
+                        disabled={uploadedPhotos.length >= (bundleCount === "unlimited" ? 999 : Number(bundleCount))}
+                        key={`bulk-upload-${uploadedPhotos.length}`} // Add key to force re-render
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Individual Photo Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {placeholders.slice(0, uploadedPhotos.length + 1).map((_, index) => (
+                  {placeholders.slice(0, Math.max(uploadedPhotos.length + 1, 4)).map((_, index) => (
                     <Card key={index} className="overflow-hidden hover:shadow-lg transition-all">
                       <CardContent className="p-0">
                         <div 
@@ -267,7 +380,7 @@ const EditorPage = () => {
                                 </div>
                               </div>
                             </div>
-                          ) : (
+                          ) : index < (bundleCount === "unlimited" ? 999 : Number(bundleCount)) ? (
                             <label 
                               htmlFor={`photo-upload-${index}`}
                               className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50 transition-colors"
@@ -276,8 +389,15 @@ const EditorPage = () => {
                                 <Plus className="h-8 w-8 text-photobooth-primary" />
                               </div>
                               <div className="text-sm font-medium text-photobooth-primary">Upload Photo</div>
-                              <div className="text-xs text-gray-500 mt-1">Click to browse files</div>
+                              <div className="text-xs text-gray-500 mt-1">Click to browse</div>
                             </label>
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                              <div className="h-14 w-14 rounded-full bg-gray-100 flex items-center justify-center mb-2">
+                                <X className="h-8 w-8" />
+                              </div>
+                              <div className="text-sm">Bundle limit reached</div>
+                            </div>
                           )}
                           <input
                             type="file"
@@ -286,6 +406,8 @@ const EditorPage = () => {
                             multiple
                             className="hidden"
                             onChange={(e) => handleFileUpload(e, index)}
+                            disabled={uploadedPhotos.length >= (bundleCount === "unlimited" ? 999 : Number(bundleCount))}
+                            key={`upload-${index}-${uploadedPhotos.length}`} // Add key to force re-render
                           />
                         </div>
                       </CardContent>
