@@ -269,6 +269,10 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const updatedSessions = prevSessions.map(session => {
         if (session.id === sessionId) {
           const updatedPhotos = [...session.photos, photo];
+          // Update currentSession if this is the current one
+          if (currentSession && currentSession.id === sessionId) {
+            setCurrentSession({ ...session, photos: updatedPhotos });
+          }
           return { ...session, photos: updatedPhotos };
         }
         return session;

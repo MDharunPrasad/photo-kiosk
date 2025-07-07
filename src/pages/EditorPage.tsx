@@ -128,6 +128,7 @@ const EditorPage = () => {
         if (currentSession) {
           for (let i = 0; i < compressedImages.length; i++) {
             const photo = {
+              id: `photo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               url: compressedImages[i],
               edited: false,
               timestamp: new Date().toISOString()
