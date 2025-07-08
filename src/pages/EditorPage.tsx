@@ -284,7 +284,7 @@ const EditorPage = () => {
                   {currentSession.location}
                 </span>
                 <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border font-medium shadow-sm ${
-                    uploadedPhotos.length >= (bundleCount === "unlimited" ? 999 : bundleCount)
+                    uploadedPhotos.length >= (typeof bundleCount === 'string' && bundleCount === "unlimited" ? 999 : Number(bundleCount))
                       ? 'bg-red-50 border-red-200 text-red-700'
                       : 'bg-green-50 border-green-200 text-green-700'
                   }`}>
