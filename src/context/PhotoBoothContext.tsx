@@ -222,9 +222,9 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   // Session management functions
-  const createSession = (name: string, location: string): Session => {
-    // Generate unique 5-digit key
-    const sessionKey = Math.floor(10000 + Math.random() * 90000).toString();
+  const createSession = (name: string, location: string, sessionId?: string): Session => {
+    // Use provided sessionId or generate a new one
+    const sessionKey = sessionId || Math.floor(10000 + Math.random() * 90000).toString();
     const newSession: Session = {
       id: `session_${Date.now()}`,
       name,

@@ -19,10 +19,6 @@ const ProfilePage = () => {
   const isMobile = useIsMobile();
   
   const [newLocation, setNewLocation] = useState('');
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(currentUser.name);
-  const [email, setEmail] = useState(currentUser.email);
-  const [role, setRole] = useState(currentUser.role);
   const [previewSession, setPreviewSession] = useState(null);
   const [showConfirm, setShowConfirm] = useState<{ type: string, payload?: any } | null>(null);
   const [autoDeleteChecked, setAutoDeleteChecked] = useState(false);
@@ -104,42 +100,23 @@ const ProfilePage = () => {
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="flex items-center">
                     <CircleUser className="h-5 w-5 mr-2" />
-                    Profile Settings
+                    Profile
                   </CardTitle>
-                  {!editing && (
-                    <Button variant="secondary" onClick={() => setEditing(true)}>
-                      Edit
-                    </Button>
-                  )}
                 </CardHeader>
                 <CardContent>
-                  <form className="space-y-4" onSubmit={e => { e.preventDefault(); setEditing(false); /* Save logic here */ }}>
+                  <form className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Full Name</Label>
-                      <Input id="name" value={name} onChange={e => setName(e.target.value)} disabled={!editing} />
+                      <Input id="name" value={currentUser.name} disabled readOnly />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
-                      <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} disabled={!editing} />
+                      <Input id="email" type="email" value={currentUser.email} disabled readOnly />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="role">Role</Label>
-                      <Select value={role} onValueChange={setRole} disabled={!editing}>
-                        <SelectTrigger id="role">
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Admin">Admin</SelectItem>
-                          <SelectItem value="Photographer">Photographer</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Input id="role" value={currentUser.role} disabled readOnly />
                     </div>
-                    {editing && (
-                      <div className="flex gap-2">
-                        <Button type="submit" className="bg-photobooth-primary hover:bg-photobooth-primary-dark">Save Changes</Button>
-                        <Button type="button" variant="secondary" onClick={() => { setEditing(false); setName(currentUser.name); setEmail(currentUser.email); setRole(currentUser.role); }}>Cancel</Button>
-                      </div>
-                    )}
                   </form>
                 </CardContent>
               </Card>

@@ -10,6 +10,9 @@ import { usePhotoBoothContext } from '@/context/PhotoBoothContext';
 import { ArrowRight, Trash, Search, Camera, MapPin } from 'lucide-react';
 import Header from '@/components/Header';
 
+// Helper for 5-digit session id
+const generateSessionId = () => Math.floor(10000 + Math.random() * 90000).toString();
+
 const HomePage: React.FC = () => {
   const { sessions, locations, createSession, deleteSession, setCurrentSession, setSessionStatus } = usePhotoBoothContext();
   
@@ -23,6 +26,7 @@ const HomePage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showUpload, setShowUpload] = useState(false);
   const [newSessionId, setNewSessionId] = useState<string | null>(null);
+  const [nextSessionId, setNextSessionId] = useState<string>(() => generateSessionId());
   const navigate = useNavigate();
 
   const handleStartSession = (e: React.FormEvent) => {
@@ -46,11 +50,12 @@ const HomePage: React.FC = () => {
       return;
     }
     
-    const newSession = createSession(name, location);
+    const newSession = createSession(name, location, nextSessionId); // Pass the pre-generated session id
     setShowUpload(true);
     setNewSessionId(newSession.id);
     setName("");
     setLocation("");
+    setNextSessionId(generateSessionId()); // Generate a new session id for the next session
   };
 
   const handleOpenSession = (sessionId: string) => {
@@ -127,6 +132,11 @@ const HomePage: React.FC = () => {
             </CardHeader>
             <CardContent className="p-6">
               <form onSubmit={handleStartSession} className="space-y-4">
+                <div className="flex justify-start mb-2">
+                  <span className="text-xs font-mono bg-red-50 border border-red-200 rounded px-3 py-1 text-red-700 font-bold">
+                    Session ID: <span className="font-bold">{nextSessionId}</span>
+                  </span>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-gray-700 font-medium">Customer Name</Label>
                   <Input 
@@ -155,14 +165,6 @@ const HomePage: React.FC = () => {
                       )}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-gray-700 font-medium">Session Key</Label>
-                  <Input
-                    value={sessions.length > 0 ? sessions[sessions.length-1].sessionKey : ''}
-                    readOnly
-                    className="border-gray-300 bg-gray-100 cursor-not-allowed select-all"
-                  />
                 </div>
                 
                 <Button 
@@ -196,7 +198,7 @@ const HomePage: React.FC = () => {
             <CardHeader className="bg-gradient-to-r from-blue-400/10 to-blue-50 border-b border-blue-400/10">
               <CardTitle className="text-2xl font-bold text-blue-600 flex items-center">
                 <MapPin className="mr-2 h-6 w-6" />
-                Previous Sessions
+                Session Info
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -226,8 +228,8 @@ const HomePage: React.FC = () => {
                         <div className="space-y-1">
                           <div className="font-medium text-photobooth-primary">{session.name}</div>
                           <div className="text-sm text-gray-500 flex items-center">
-                            <span className="font-mono">{session.id.substring(0, 8)}</span>
-                            <span className="mx-1">•</span>
+                            <span className="font-mono">{session.sessionKey}</span>
+                            <span className="mx-1">-</span>
                             <span className="capitalize">{session.location}</span>
                           </div>
                         </div>

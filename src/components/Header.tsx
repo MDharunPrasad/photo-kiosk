@@ -25,7 +25,7 @@ const Header = () => {
     <header className="bg-gradient-to-r from-photobooth-primary to-photobooth-primary-dark text-white h-20 px-6 shadow-md flex items-center">
       <div className="flex w-full justify-between items-center">
         <div className="flex items-center">
-          <Link to="/" className="text-2xl md:text-3xl font-bold text-white no-underline border-none outline-none bg-transparent shadow-none">
+          <Link to="/home" className="text-2xl md:text-3xl font-bold text-white no-underline border-none outline-none bg-transparent shadow-none">
             Photo Kiosk
           </Link>
         </div>
