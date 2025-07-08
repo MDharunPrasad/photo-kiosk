@@ -32,7 +32,7 @@ const LoginPage: React.FC = () => {
       title: "Login Successful",
       description: "Welcome back to PhotoBooth Software."
     });
-    navigate('/');
+    navigate('/home');
   };
 
   return (
@@ -77,6 +77,7 @@ const LoginPage: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="Admin">Admin</SelectItem>
                   <SelectItem value="Photographer">Photographer</SelectItem>
+                  <SelectItem value="Operator">Operator</SelectItem>
                 </SelectContent>
               </Select>
             </div>

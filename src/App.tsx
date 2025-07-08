@@ -15,6 +15,7 @@ import CartPage from "./pages/CartPage";
 import SessionViewerPage from "./pages/SessionViewerPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
+import SparklesIntro from "@/components/ui/sparkles-intro";
 
 const queryClient = new QueryClient();
 
@@ -26,10 +27,11 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={<SparklesIntro />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route element={<PrivateRoute />}>
-              <Route path="/" element={<HomePage />} />
+              <Route path="/home" element={<HomePage />} />
               <Route path="/bundles" element={<BundlesPage />} />
               <Route path="/editor" element={<EditorPage />} />
               <Route path="/cart" element={<CartPage />} />

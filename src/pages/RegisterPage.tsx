@@ -12,7 +12,6 @@ const RegisterPage: React.FC = () => {
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('');
   const { register } = usePhotoBoothContext();
   const { toast } = useToast();
@@ -20,18 +19,10 @@ const RegisterPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !username || !password || !confirmPassword || !role) {
+    if (!name || !username || !password || !role) {
       toast({
         title: "Missing Information",
         description: "Please fill in all fields to register.",
-        variant: "destructive"
-      });
-      return;
-    }
-    if (password !== confirmPassword) {
-      toast({
-        title: "Password Mismatch",
-        description: "Password and confirmation do not match.",
         variant: "destructive"
       });
       return;
@@ -71,6 +62,7 @@ const RegisterPage: React.FC = () => {
                   <SelectContent>
                     <SelectItem value="Admin">Admin</SelectItem>
                     <SelectItem value="Photographer">Photographer</SelectItem>
+                    <SelectItem value="Operator">Operator</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -103,17 +95,6 @@ const RegisterPage: React.FC = () => {
                   placeholder="Create a password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="rounded-lg border-gray-300 focus:border-photobooth-primary focus:ring-photobooth-primary"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input 
-                  id="confirmPassword" 
-                  type="password" 
-                  placeholder="Confirm your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
                   className="rounded-lg border-gray-300 focus:border-photobooth-primary focus:ring-photobooth-primary"
                 />
               </div>
