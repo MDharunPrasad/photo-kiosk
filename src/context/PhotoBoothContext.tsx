@@ -15,7 +15,8 @@ interface Session {
   name: string;
   location: string;
   date: string;
-  status: 'Active' | 'Completed';
+  status: 'pending' | 'ready-for-operator' | 'completed';
+  sessionKey: string;
   photos: Photo[];
   bundle?: {
     name: string;
@@ -55,6 +56,7 @@ interface PhotoBoothContextType {
   clearDeletedSessions: () => void;
   addLocation: (name: string) => void;
   toggleLocation: (id: string) => void;
+  setSessionStatus: (sessionId: string, status: 'pending' | 'ready-for-operator' | 'completed') => void;
 }
 
 const PhotoBoothContext = createContext<PhotoBoothContextType | undefined>(undefined);
@@ -221,12 +223,15 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Session management functions
   const createSession = (name: string, location: string): Session => {
+    // Generate unique 5-digit key
+    const sessionKey = Math.floor(10000 + Math.random() * 90000).toString();
     const newSession: Session = {
       id: `session_${Date.now()}`,
       name,
       location,
       date: new Date().toISOString(),
-      status: 'Active',
+      status: 'pending',
+      sessionKey,
       photos: []
     };
     
@@ -286,8 +291,8 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         console.warn('Storage quota nearly exceeded, cleaning up old sessions');
         // Clean up old completed sessions
         const cleanedSessions = updatedSessions.filter(session => 
-          session.status === 'Active' || 
-          (session.status === 'Completed' && 
+          session.status === 'pending' || 
+          (session.status === 'completed' && 
            new Date().getTime() - new Date(session.date).getTime() < 24 * 60 * 60 * 1000) // Keep only last 24 hours
         );
         
@@ -297,7 +302,7 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         } catch (error) {
           console.error('Failed to save to localStorage after cleanup:', error);
           // If still failing, keep only active sessions
-          const activeSessions = updatedSessions.filter(session => session.status === 'Active');
+          const activeSessions = updatedSessions.filter(session => session.status === 'pending');
           localStorage.setItem('photoBoothSessions', JSON.stringify(activeSessions));
           return activeSessions;
         }
@@ -310,8 +315,8 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           
           // Try to clean up and save again
           const cleanedSessions = updatedSessions.filter(session => 
-            session.status === 'Active' || 
-            (session.status === 'Completed' && 
+            session.status === 'pending' || 
+            (session.status === 'completed' && 
              new Date().getTime() - new Date(session.date).getTime() < 60 * 60 * 1000) // Keep only last hour
           );
           
@@ -380,7 +385,7 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (session.id === sessionId) {
           return {
             ...session,
-            status: 'Completed'
+            status: 'completed'
           };
         }
         return session;
@@ -390,7 +395,7 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (currentSession?.id === sessionId) {
       setCurrentSession({
         ...currentSession,
-        status: 'Completed'
+        status: 'completed'
       });
     }
   };
@@ -441,6 +446,15 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     ));
   };
 
+  const setSessionStatus = (sessionId: string, status: 'pending' | 'ready-for-operator' | 'completed') => {
+    setSessions(prevSessions => prevSessions.map(session =>
+      session.id === sessionId ? { ...session, status } : session
+    ));
+    if (currentSession?.id === sessionId) {
+      setCurrentSession(current => current ? { ...current, status } : current);
+    }
+  };
+
   const value = {
     currentUser,
     sessions,
@@ -464,8 +478,40 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     autoDeleteOldSessions,
     clearDeletedSessions,
     addLocation,
-    toggleLocation
+    toggleLocation,
+    setSessionStatus
   };
 
-  return <PhotoBoothContext.Provider value={value}>{children}</PhotoBoothContext.Provider>;
+  return (
+    <PhotoBoothContext.Provider
+      value={{
+        currentUser,
+        sessions,
+        currentSession,
+        locations,
+        login,
+        logout,
+        register,
+        createSession,
+        deleteSession,
+        recoverSession,
+        setCurrentSession,
+        selectBundle,
+        addPhoto,
+        updatePhoto,
+        deletePhoto,
+        completeSession,
+        deleteAllSessions,
+        deleteSessionsByDateRange,
+        deleteSessionsByMonth,
+        autoDeleteOldSessions,
+        clearDeletedSessions,
+        addLocation,
+        toggleLocation,
+        setSessionStatus
+      }}
+    >
+      {children}
+    </PhotoBoothContext.Provider>
+  );
 };

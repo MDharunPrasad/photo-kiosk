@@ -16,6 +16,7 @@ import SessionViewerPage from "./pages/SessionViewerPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 import SparklesIntro from "@/components/ui/sparkles-intro";
+import OperatorDashboard from "./pages/OperatorDashboard";
 
 const queryClient = new QueryClient();
 
@@ -30,8 +31,9 @@ const App = () => (
             <Route path="/" element={<SparklesIntro />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/operator" element={<OperatorDashboard />} />
             <Route element={<PrivateRoute />}>
-              <Route path="/home" element={<HomePage />} />
               <Route path="/bundles" element={<BundlesPage />} />
               <Route path="/editor" element={<EditorPage />} />
               <Route path="/cart" element={<CartPage />} />

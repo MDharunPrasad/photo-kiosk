@@ -11,7 +11,7 @@ import { ArrowRight, Trash, Search, Camera, MapPin } from 'lucide-react';
 import Header from '@/components/Header';
 
 const HomePage: React.FC = () => {
-  const { sessions, locations, createSession, deleteSession, setCurrentSession } = usePhotoBoothContext();
+  const { sessions, locations, createSession, deleteSession, setCurrentSession, setSessionStatus } = usePhotoBoothContext();
   
   // Add debug logging
   console.log('HomePage - Locations:', locations);
@@ -21,6 +21,8 @@ const HomePage: React.FC = () => {
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showUpload, setShowUpload] = useState(false);
+  const [newSessionId, setNewSessionId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleStartSession = (e: React.FormEvent) => {
@@ -45,7 +47,10 @@ const HomePage: React.FC = () => {
     }
     
     const newSession = createSession(name, location);
-    navigate('/bundles');
+    setShowUpload(true);
+    setNewSessionId(newSession.id);
+    setName("");
+    setLocation("");
   };
 
   const handleOpenSession = (sessionId: string) => {
@@ -69,11 +74,32 @@ const HomePage: React.FC = () => {
     });
   };
 
+  const handleUploadPhotos = () => {
+    document.getElementById('photo-upload-input')?.click();
+  };
+
+  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !newSessionId) return;
+    // Here you would upload files to the session (simulate for now)
+    // After upload, set status to 'ready-for-operator'
+    setSessionStatus(newSessionId, 'ready-for-operator');
+    toast({ title: "Photos Uploaded", description: "Session is now ready for operator." });
+    setShowUpload(false);
+    setNewSessionId(null);
+  };
+
   const getStatusBadge = (status: string) => {
-    if (status === 'Active') {
-      return <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">Active</span>;
+    if (status === 'pending') {
+      return <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">Pending</span>;
     }
-    return <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded">Completed</span>;
+    if (status === 'ready-for-operator') {
+      return <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Ready for Operator</span>;
+    }
+    if (status === 'completed') {
+      return <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">Completed</span>;
+    }
+    return null;
   };
 
   const filteredSessions = (searchTerm
@@ -111,7 +137,6 @@ const HomePage: React.FC = () => {
                     className="border-gray-300 focus-visible:ring-photobooth-primary"
                   />
                 </div>
-                
                 <div className="space-y-2">
                   <Label htmlFor="location" className="text-gray-700 font-medium">Location in Park</Label>
                   <Select onValueChange={setLocation} value={location}>
@@ -130,23 +155,14 @@ const HomePage: React.FC = () => {
                       )}
                     </SelectContent>
                   </Select>
-                  
-                  {/* Temporary debug info and reset button */}
-                  <div className="text-xs text-gray-500 mt-1 p-2 bg-gray-50 rounded">
-                    Debug: {locations.length} total locations, {locations.filter(loc => loc.isActive).length} active
-                    {locations.length === 0 && (
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          localStorage.removeItem('photoBoothLocations');
-                          window.location.reload();
-                        }}
-                        className="ml-2 text-blue-600 underline"
-                      >
-                        Reset Locations
-                      </button>
-                    )}
-                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-700 font-medium">Session Key</Label>
+                  <Input
+                    value={sessions.length > 0 ? sessions[sessions.length-1].sessionKey : ''}
+                    readOnly
+                    className="border-gray-300 bg-gray-100 cursor-not-allowed select-all"
+                  />
                 </div>
                 
                 <Button 
@@ -156,6 +172,22 @@ const HomePage: React.FC = () => {
                   Start Session <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </form>
+              {showUpload && (
+                <div className="mt-6 flex flex-col items-center gap-3">
+                  <Button onClick={handleUploadPhotos} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded-lg shadow">
+                    Upload Photos
+                  </Button>
+                  <input
+                    id="photo-upload-input"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleFilesSelected}
+                  />
+                  <div className="text-xs text-gray-500">Select photos to upload for this session.</div>
+                </div>
+              )}
             </CardContent>
           </Card>
           
