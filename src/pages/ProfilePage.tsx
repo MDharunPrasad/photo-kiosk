@@ -74,7 +74,7 @@ const ProfilePage = () => {
               </div>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold">{currentUser.name}</h1>
-                <p className="text-gray-600">{currentUser.role === 'Photographer' ? 'Photographer' : currentUser.role}</p>
+                <p className="text-gray-600">{currentUser.role}</p>
               </div>
             </div>
           </div>
@@ -152,7 +152,8 @@ const ProfilePage = () => {
                     <button
                       className="bg-gray-200 text-gray-800 rounded px-3 py-1 text-sm hover:bg-gray-300 focus:outline-none"
                       onClick={e => {
-                        e.currentTarget.nextSibling.classList.toggle('hidden');
+                        const sibling = e.currentTarget.nextElementSibling as HTMLElement | null;
+                        if (sibling) sibling.classList.toggle('hidden');
                       }}
                     >
                       Bulk Actions ▾
@@ -193,7 +194,7 @@ const ProfilePage = () => {
                               <span>{new Date(session.date).toLocaleDateString()}</span>
                             </div>
                             <div className="mb-2">
-                              <span className="font-medium">Bundle:</span> {session.bundle ? `${session.bundle.name} (₹${session.bundle.price})${session.bundle.description ? ' - ' + session.bundle.description : ''}` : 'No bundle selected'}
+                              <span className="font-medium">Bundle:</span> {session.bundle ? `${session.bundle.name} (₹${session.bundle.price})` : 'No bundle selected'}
                             </div>
                             <div>
                               <span className="font-medium">Photos:</span>
@@ -244,7 +245,7 @@ const ProfilePage = () => {
                               <span>{new Date(session.date).toLocaleDateString()}</span>
                             </div>
                             <div className="mb-2">
-                              <span className="font-medium">Bundle:</span> {session.bundle ? `${session.bundle.name} (₹${session.bundle.price})${session.bundle.description ? ' - ' + session.bundle.description : ''}` : 'No bundle selected'}
+                              <span className="font-medium">Bundle:</span> {session.bundle ? `${session.bundle.name} (₹${session.bundle.price})` : 'No bundle selected'}
                             </div>
                             <div>
                               <span className="font-medium">Photos:</span>
@@ -299,7 +300,7 @@ const ProfilePage = () => {
                         <div className="mb-2"><b>Location:</b> {previewSession.location}</div>
                         <div className="mb-2"><b>Date:</b> {new Date(previewSession.date).toLocaleDateString()}</div>
                         <div className="mb-2"><b>Status:</b> {previewSession.status}</div>
-                        <div className="mb-2"><b>Bundle:</b> {previewSession.bundle ? `${previewSession.bundle.name} (₹${previewSession.bundle.price})${previewSession.bundle.description ? ' - ' + previewSession.bundle.description : ''}` : 'No bundle selected'}</div>
+                        <div className="mb-2"><b>Bundle:</b> {previewSession.bundle ? `${previewSession.bundle.name} (₹${previewSession.bundle.price})` : 'No bundle selected'}</div>
                         <div className="mb-2"><b>Photos:</b></div>
                         {previewSession.photos.length === 0 ? (
                           <div className="text-gray-500 mb-2">No photos taken in this session yet.</div>

@@ -50,7 +50,7 @@ const HomePage: React.FC = () => {
       return;
     }
     
-    const newSession = createSession(name, location, nextSessionId); // Pass the pre-generated session id
+    const newSession = createSession(name, location); // Pass only name and location
     setShowUpload(true);
     setNewSessionId(newSession.id);
     setName("");

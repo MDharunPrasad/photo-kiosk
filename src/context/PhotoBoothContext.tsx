@@ -45,7 +45,7 @@ interface PhotoBoothContextType {
   recoverSession: (id: string) => void;
   setCurrentSession: (session: Session | null) => void;
   selectBundle: (bundle: { name: string; count: number | string; price: number }) => void;
-  addPhoto: (sessionId: string, photo: Omit<Photo, 'id'>) => void;
+  addPhoto: (sessionId: string, photo: Photo) => void;
   updatePhoto: (sessionId: string, photoId: string, updates: Partial<Photo>) => void;
   deletePhoto: (sessionId: string, photoId: string) => void;
   completeSession: (sessionId: string) => void;
@@ -234,10 +234,8 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       sessionKey,
       photos: []
     };
-    
     setSessions(prevSessions => [...prevSessions, newSession]);
     setCurrentSession(newSession);
-    
     return newSession;
   };
 
@@ -269,7 +267,7 @@ export const PhotoBoothProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
-  const addPhoto = (sessionId: string, photo: PhotoData) => {
+  const addPhoto = (sessionId: string, photo: Photo) => {
     setSessions(prevSessions => {
       const updatedSessions = prevSessions.map(session => {
         if (session.id === sessionId) {
