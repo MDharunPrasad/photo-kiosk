@@ -7,11 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { usePhotoBoothContext } from '@/context/PhotoBoothContext';
-import Header from '@/components/Header';
 
 const RegisterPage: React.FC = () => {
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('');
@@ -21,9 +20,7 @@ const RegisterPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate form
-    if (!name || !email || !password || !confirmPassword || !role) {
+    if (!name || !username || !password || !confirmPassword || !role) {
       toast({
         title: "Missing Information",
         description: "Please fill in all fields to register.",
@@ -31,7 +28,6 @@ const RegisterPage: React.FC = () => {
       });
       return;
     }
-    
     if (password !== confirmPassword) {
       toast({
         title: "Password Mismatch",
@@ -40,10 +36,7 @@ const RegisterPage: React.FC = () => {
       });
       return;
     }
-    
-    // Register the user
-    const success = register(name, email, password, role);
-    
+    const success = register(name, username, password, role);
     if (success) {
       toast({
         title: "Registration Successful",
@@ -53,7 +46,7 @@ const RegisterPage: React.FC = () => {
     } else {
       toast({
         title: "Registration Failed",
-        description: "This email is already registered.",
+        description: "This username is already registered.",
         variant: "destructive"
       });
     }
@@ -61,21 +54,18 @@ const RegisterPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header />
-      
       <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md shadow-xl border-0">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-photobooth-primary">Register</CardTitle>
-            <CardDescription>Create your PhotoBooth account</CardDescription>
+            <CardTitle className="text-3xl font-extrabold text-photobooth-primary mb-1">Register</CardTitle>
+            <CardDescription className="text-base text-gray-700">Create your PhotoBooth account</CardDescription>
           </CardHeader>
-          
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
                 <Select onValueChange={setRole}>
-                  <SelectTrigger id="role">
+                  <SelectTrigger id="role" className="rounded-lg border-gray-300 focus:border-photobooth-primary focus:ring-photobooth-primary">
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
                   <SelectContent>
@@ -84,7 +74,6 @@ const RegisterPage: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
                 <Input 
@@ -92,20 +81,20 @@ const RegisterPage: React.FC = () => {
                   placeholder="Enter your full name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  className="rounded-lg border-gray-300 focus:border-photobooth-primary focus:ring-photobooth-primary"
                 />
               </div>
-              
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="username">Username</Label>
                 <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="username" 
+                  type="text" 
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="rounded-lg border-gray-300 focus:border-photobooth-primary focus:ring-photobooth-primary"
                 />
               </div>
-              
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <Input 
@@ -114,9 +103,9 @@ const RegisterPage: React.FC = () => {
                   placeholder="Create a password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="rounded-lg border-gray-300 focus:border-photobooth-primary focus:ring-photobooth-primary"
                 />
               </div>
-              
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
                 <Input 
@@ -125,18 +114,17 @@ const RegisterPage: React.FC = () => {
                   placeholder="Confirm your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="rounded-lg border-gray-300 focus:border-photobooth-primary focus:ring-photobooth-primary"
                 />
               </div>
-              
               <Button 
                 type="submit" 
-                className="w-full bg-photobooth-primary hover:bg-photobooth-primary-dark"
+                className="w-full bg-photobooth-primary hover:bg-photobooth-primary-dark text-lg py-2 rounded-lg shadow-md"
               >
                 Register
               </Button>
             </form>
           </CardContent>
-          
           <CardFooter className="flex justify-center">
             <div className="text-sm text-gray-600">
               Already have an account?{" "}
